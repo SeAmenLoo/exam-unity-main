@@ -27,6 +27,64 @@ public class Q3 : MonoBehaviour
     public async void OnStartBtnClick()
     {
         // TODO: 请在此处开始作答
+        try
+        {
+            string[] files = await LoadConfig();
+
+            using SemaphoreSlim semaphore = new SemaphoreSlim(3, 3);
+            List<Task> tasks = new List<Task>();
+
+            foreach (string file in files)
+            {
+                tasks.Add(LoadFileWithRetryAsync(file, semaphore));
+            }
+
+            await Task.WhenAll(tasks);
+
+            await InitSystem();
+
+            Debug.Log("system initialized");
+        }
+        catch (Exception e)
+        {
+            Debug.LogError(e.ToString());
+        }
+    }
+
+    private async Task LoadFileWithRetryAsync(string file, SemaphoreSlim semaphore)
+    {
+        int maxRetries = 3;
+
+        for (int i = 0; i < maxRetries; i++)
+        {
+            try
+            {
+                await semaphore.WaitAsync();
+                try
+                {
+                    Task loadTask = LoadFile(file);
+                    Task timeoutTask = Task.Delay(3000);
+
+                    Task completed = await Task.WhenAny(loadTask, timeoutTask);
+                    if (completed == timeoutTask)
+                    {
+                        throw new TimeoutException($"load file timeout: {file}");
+                    }
+
+                    await loadTask;
+                    return;
+                }
+                finally
+                {
+                    semaphore.Release();
+                }
+            }
+            catch (Exception e) when (i < maxRetries - 1)
+            {
+                Debug.LogWarning($"load file failed: {file}, retry {i + 1}/{maxRetries}: {e.Message}");
+
+            }
+        }
     }
 
     // #region 以下是辅助测试题而写的一些 mock 函数，请勿修改

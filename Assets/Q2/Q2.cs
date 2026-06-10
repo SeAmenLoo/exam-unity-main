@@ -20,15 +20,20 @@ public class Q2 : MonoBehaviour
     public void OnShowBtnClick()
     {
         // TODO: 请在此处开始作答
+        //见PlayButton Show
     }
 
     public void OnTouchDownBtnClick()
     {
         // TODO: 请在此处开始作答
+        //见PlayButton Down
+        //另：函数名与按钮事件反了
     }
 
     public void OnTouchUpBtnClick()
     {
         // TODO: 请在此处开始作答
+        //见PlayButton Up
+        //另：函数名与按钮事件反了
     }
 }

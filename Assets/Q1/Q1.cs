@@ -47,6 +47,92 @@ public class Q1 : MonoBehaviour
 
     public void OnGenerateBtnClick()
     {
-        // TODO: 请在此处开始作答
+        float x = string.IsNullOrEmpty(xInputField.text) ? 0 : float.Parse(xInputField.text);
+        float y = string.IsNullOrEmpty(yInputField.text) ? 0 : float.Parse(yInputField.text);
+        float z = string.IsNullOrEmpty(zInputField.text) ? 0 : float.Parse(zInputField.text);
+
+        foreach (Transform child in gridRootNode)
+        {
+            DestroyImmediate(child.gameObject);
+        }
+
+        int[,] colorIds = new int[10, 10];
+
+        colorIds[0, 0] = Random.Range(0, COLORS.Length);
+
+        for (int n = 1; n < 10; n++)
+        {
+            colorIds[0, n] = PickColorId(colorIds[0, n - 1], -1, x, y, z);
+        }
+
+        for (int m = 1; m < 10; m++)
+        {
+            colorIds[m, 0] = PickColorId(-1, colorIds[m - 1, 0], x, y, z);
+        }
+
+        for (int m = 1; m < 10; m++)
+        {
+            for (int n = 1; n < 10; n++)
+            {
+                colorIds[m, n] = PickColorId(colorIds[m, n - 1], colorIds[m - 1, n], x, y, z);
+            }
+        }
+
+        for (int m = 0; m < 10; m++)
+        {
+            for (int n = 0; n < 10; n++)
+            {
+                GameObject item = Instantiate(gridItemPrefab, gridRootNode);
+                RectTransform rt = item.GetComponent<RectTransform>();
+                rt.anchoredPosition = new Vector2((n-4.5f) * GRID_ITEM_SIZE, - (m-4.5f) * GRID_ITEM_SIZE);
+                Image img = item.GetComponent<Image>();
+                img.color = COLORS[colorIds[m, n]];
+            }
+        }
+    }
+
+    private int PickColorId(int left, int top, float x, float y, float z)
+    {
+        float[] weights = new float[COLORS.Length];
+        for (int i = 0; i < COLORS.Length; i++)
+        {
+            weights[i] = 1.0f;
+        }
+
+        if (left >= 0 && top >= 0)
+        {
+            weights[left] += x / 100f;
+            weights[top] += y / 100f;
+            if (left == top)
+            {
+                weights[left] += z / 100f;
+            }
+        }
+        else if (left >= 0)
+        {
+            weights[left] += x / 100f;
+        }
+        else if (top >= 0)
+        {
+            weights[top] += y / 100f;
+        }
+
+        float total = 0;
+        for (int i = 0; i < weights.Length; i++)
+        {
+            total += weights[i];
+        }
+
+        float r = Random.Range(0f, total);
+        float cum = 0;
+        for (int i = 0; i < weights.Length; i++)
+        {
+            cum += weights[i];
+            if (r < cum)
+            {
+                return i;
+            }
+        }
+        return weights.Length - 1;
     }
 }
